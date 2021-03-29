@@ -5,3 +5,5 @@ Example of Streamlit app deployment using a time series quick analysis and predi
 The sidebar slider allow to chose
 - The (p,q,d) parameters of the Arima fit
 - The start and end of horizon prediction of this time series
+
+Deployed here https://ts-analysis-prediction.herokuapp.com/ 
