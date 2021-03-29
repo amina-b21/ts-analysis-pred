@@ -13,17 +13,28 @@ import plotly.express as px
 import plotly.figure_factory as ff
 
 
-dta = sm.datasets.sunspots.load_pandas().data
-dta.YEAR = pd.to_datetime(dta.YEAR, format='%Y')
-dta = dta.set_index("YEAR")
+@st.cache
+def load_data():
+    dta = sm.datasets.sunspots.load_pandas().data
+    dta.YEAR = pd.to_datetime(dta.YEAR, format='%Y')
+    dta = dta.set_index("YEAR")
+    return dta
 
-#dta = dta.sort_values(by="YEAR", ascending=True)
+
+dta = load_data()  # sm.datasets.sunspots.load_pandas().data
+
+# dta = dta.sort_values(by="YEAR", ascending=True)
 st.title("Time series prediction")
-
 st.subheader("Data set: Yearly sun activity since 1700")
+
+
+# @st.cache
+# def general_plot(dta):
 # SCATTER AND LINES OF THE TS
+fig = go.Figure()
 fig = px.line(dta, x=dta.index, y="SUNACTIVITY")
-st.write(fig)
+# return fig
+st.write(fig)  # (general_plot(dta))
 
 st.subheader("Below are the ACF and PCF plots of the time series")
 # ACF and PCF plots
@@ -37,7 +48,9 @@ st.subheader("Below are the ACF and PCF plots of the time series")
 # ACF
 
 
+@st.cache
 def plot_lag_correlations(cf_series, name):
+
     ylabel = "Autocorrelation" if name == "ACF" else "Partial Autocorrelation"
     df_acf = cf_series
     fig = go.Figure()
@@ -78,11 +91,17 @@ d = st.sidebar.slider('d', 0, 5, 0)
 # Fitting the model
 st.subheader("Fitting an ARMA model")
 st.write("Estimated parameters from the input model:")
-# Needed for the fit, index as date
-#dta = dta.set_index("YEAR")
-#dta.index = pd.Index(pd.date_range("1700", end="2009", freq="A-DEC"))
+
+
+# @st.cache
+# def fit_model(p, q, d):
 arma_mod = sm.tsa.statespace.SARIMAX(
     dta[["SUNACTIVITY"]], order=(p, q, d), trend='c').fit(disp=False)
+# eturn(arma_mod)
+
+
+# Fit model if parameters change
+# arma_mod = fit_model(p, q, d)
 st.write(arma_mod.params.reset_index().rename(columns={0: 'estimate'}))
 
 # st.write(arma_mod.resid.reset_index())
@@ -106,8 +125,15 @@ st.write(fig)
 st.sidebar.subheader("Chosing Start and End of prediction horizon")
 start_pred = st.sidebar.slider('Horizon start', 1990, 2000, 1990)
 end_pred = st.sidebar.slider('Horizon end', 2001, 2012, 2010)
-predict_sunspots = arma_mod.predict(
-    start=str(start_pred), end=str(end_pred), dynamic=True).reset_index().rename(columns={'index': 'YEAR'})
+
+
+@ st.cache
+def predict(start_pred, end_pred):
+    return arma_mod.predict(
+        start=str(start_pred), end=str(end_pred), dynamic=True).reset_index().rename(columns={'index': 'YEAR'})
+
+
+predict_sunspots = predict(start_pred, end_pred)
 
 
 # Plot predicted against true values
